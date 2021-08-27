@@ -12,7 +12,6 @@ from average_reward import *
 from compute_baselines import *
 from compute_gradients import *
 from actor_agent import ActorAgent
-from tf_logger import TFLogger
 
 
 def invoke_model(actor_agent, obs, exp):
@@ -96,119 +95,119 @@ def invoke_model(actor_agent, obs, exp):
     return node, use_exec
 
 
-def train_agent(agent_id, param_queue, reward_queue, adv_queue, gradient_queue):
-    # model evaluation seed
-    tf.set_random_seed(agent_id)
+# def train_agent(agent_id, param_queue, reward_queue, adv_queue, gradient_queue):
+#     # model evaluation seed
+#     tf.set_random_seed(agent_id)
 
-    # set up environment
-    env = Environment()
+#     # set up environment
+#     env = Environment()
 
-    # gpu configuration
-    config = tf.ConfigProto(
-        device_count={'GPU': args.worker_num_gpu},
-        gpu_options=tf.GPUOptions(
-            per_process_gpu_memory_fraction=args.worker_gpu_fraction))
+#     # gpu configuration
+#     config = tf.ConfigProto(
+#         device_count={'GPU': args.worker_num_gpu},
+#         gpu_options=tf.GPUOptions(
+#             per_process_gpu_memory_fraction=args.worker_gpu_fraction))
 
-    sess = tf.Session(config=config)
+#     sess = tf.Session(config=config)
 
-    # set up actor agent
-    actor_agent = ActorAgent(
-        sess, args.node_input_dim, args.job_input_dim,
-        args.hid_dims, args.output_dim, args.max_depth,
-        range(1, args.exec_cap + 1))
+#     # set up actor agent
+#     actor_agent = ActorAgent(
+#         sess, args.node_input_dim, args.job_input_dim,
+#         args.hid_dims, args.output_dim, args.max_depth,
+#         range(1, args.exec_cap + 1))
 
-    # collect experiences
-    while True:
-        # get parameters from master
-        (actor_params, seed, max_time, entropy_weight) = \
-            param_queue.get()
+#     # collect experiences
+#     while True:
+#         # get parameters from master
+#         (actor_params, seed, max_time, entropy_weight) = \
+#             param_queue.get()
         
-        # synchronize model
-        actor_agent.set_params(actor_params)
+#         # synchronize model
+#         actor_agent.set_params(actor_params)
 
-        # reset environment
-        env.seed(seed)
-        env.reset(max_time=max_time)
+#         # reset environment
+#         env.seed(seed)
+#         env.reset(max_time=max_time)
 
-        # set up storage for experience
-        exp = {'node_inputs': [], 'job_inputs': [], \
-               'gcn_mats': [], 'gcn_masks': [], \
-               'summ_mats': [], 'running_dag_mat': [], \
-               'dag_summ_back_mat': [], \
-               'node_act_vec': [], 'job_act_vec': [], \
-               'node_valid_mask': [], 'job_valid_mask': [], \
-               'reward': [], 'wall_time': [],
-               'job_state_change': []}
+#         # set up storage for experience
+#         exp = {'node_inputs': [], 'job_inputs': [], \
+#                'gcn_mats': [], 'gcn_masks': [], \
+#                'summ_mats': [], 'running_dag_mat': [], \
+#                'dag_summ_back_mat': [], \
+#                'node_act_vec': [], 'job_act_vec': [], \
+#                'node_valid_mask': [], 'job_valid_mask': [], \
+#                'reward': [], 'wall_time': [],
+#                'job_state_change': []}
 
-        try:
-            # The masking functions (node_valid_mask and
-            # job_valid_mask in actor_agent.py) has some
-            # small chance (once in every few thousand
-            # iterations) to leave some non-zero probability
-            # mass for a masked-out action. This will
-            # trigger the check in "node_act and job_act
-            # should be valid" in actor_agent.py
-            # Whenever this is detected, we throw out the
-            # rollout of that iteration and try again.
+#         try:
+#             # The masking functions (node_valid_mask and
+#             # job_valid_mask in actor_agent.py) has some
+#             # small chance (once in every few thousand
+#             # iterations) to leave some non-zero probability
+#             # mass for a masked-out action. This will
+#             # trigger the check in "node_act and job_act
+#             # should be valid" in actor_agent.py
+#             # Whenever this is detected, we throw out the
+#             # rollout of that iteration and try again.
 
-            # run experiment
-            obs = env.observe()
-            done = False
+#             # run experiment
+#             obs = env.observe()
+#             done = False
 
-            # initial time
-            exp['wall_time'].append(env.wall_time.curr_time)
+#             # initial time
+#             exp['wall_time'].append(env.wall_time.curr_time)
 
-            while not done:
+#             while not done:
                 
-                node, use_exec = invoke_model(actor_agent, obs, exp)
+#                 node, use_exec = invoke_model(actor_agent, obs, exp)
 
-                obs, reward, done = env.step(node, use_exec)
+#                 obs, reward, done = env.step(node, use_exec)
 
-                if node is not None:
-                    # valid action, store reward and time
-                    exp['reward'].append(reward)
-                    exp['wall_time'].append(env.wall_time.curr_time)
-                elif len(exp['reward']) > 0:
-                    # Note: if we skip the reward when node is None
-                    # (i.e., no available actions), the sneaky
-                    # agent will learn to exhaustively pick all
-                    # nodes in one scheduling round, in order to
-                    # avoid the negative reward
-                    exp['reward'][-1] += reward
-                    exp['wall_time'][-1] = env.wall_time.curr_time
+#                 if node is not None:
+#                     # valid action, store reward and time
+#                     exp['reward'].append(reward)
+#                     exp['wall_time'].append(env.wall_time.curr_time)
+#                 elif len(exp['reward']) > 0:
+#                     # Note: if we skip the reward when node is None
+#                     # (i.e., no available actions), the sneaky
+#                     # agent will learn to exhaustively pick all
+#                     # nodes in one scheduling round, in order to
+#                     # avoid the negative reward
+#                     exp['reward'][-1] += reward
+#                     exp['wall_time'][-1] = env.wall_time.curr_time
 
-            # report reward signals to master
-            assert len(exp['node_inputs']) == len(exp['reward'])
-            reward_queue.put(
-                [exp['reward'], exp['wall_time'],
-                len(env.finished_job_dags),
-                np.mean([j.completion_time - j.start_time \
-                         for j in env.finished_job_dags]),
-                env.wall_time.curr_time >= env.max_time])
+#             # report reward signals to master
+#             assert len(exp['node_inputs']) == len(exp['reward'])
+#             reward_queue.put(
+#                 [exp['reward'], exp['wall_time'],
+#                 len(env.finished_job_dags),
+#                 np.mean([j.completion_time - j.start_time \
+#                          for j in env.finished_job_dags]),
+#                 env.wall_time.curr_time >= env.max_time])
 
-            # get advantage term from master
-            batch_adv = adv_queue.get()
+#             # get advantage term from master
+#             batch_adv = adv_queue.get()
 
-            if batch_adv is None:
-                # some other agents panic for the try and the
-                # main thread throw out the rollout, reset and
-                # try again now
-                continue
+#             if batch_adv is None:
+#                 # some other agents panic for the try and the
+#                 # main thread throw out the rollout, reset and
+#                 # try again now
+#                 continue
 
-            # compute gradients
-            actor_gradient, loss = compute_actor_gradients(
-                actor_agent, exp, batch_adv, entropy_weight)
+#             # compute gradients
+#             actor_gradient, loss = compute_actor_gradients(
+#                 actor_agent, exp, batch_adv, entropy_weight)
 
-            # report gradient to master
-            gradient_queue.put([actor_gradient, loss])
+#             # report gradient to master
+#             gradient_queue.put([actor_gradient, loss])
 
-        except AssertionError:
-            # ask the main to abort this rollout and
-            # try again
-            reward_queue.put(None)
-            # need to still get from adv_queue to 
-            # prevent blocking
-            adv_queue.get()
+#         except AssertionError:
+#             # ask the main to abort this rollout and
+#             # try again
+#             reward_queue.put(None)
+#             # need to still get from adv_queue to 
+#             # prevent blocking
+#             adv_queue.get()
 
 
 def main():
@@ -218,23 +217,6 @@ def main():
     # create result and model folder
     create_folder_if_not_exists(args.result_folder)
     create_folder_if_not_exists(args.model_folder)
-
-    # initialize communication queues
-    params_queues = [mp.Queue(1) for _ in range(args.num_agents)]
-    reward_queues = [mp.Queue(1) for _ in range(args.num_agents)]
-    adv_queues = [mp.Queue(1) for _ in range(args.num_agents)]
-    gradient_queues = [mp.Queue(1) for _ in range(args.num_agents)]
-
-    # set up training agents
-    agents = []
-    for i in range(args.num_agents):
-        agents.append(mp.Process(target=train_agent, args=(
-            i, params_queues[i], reward_queues[i],
-            adv_queues[i], gradient_queues[i])))
-
-    # start training agents
-    for i in range(args.num_agents):
-        agents[i].start()
 
     # gpu configuration
     config = tf.ConfigProto(
@@ -250,13 +232,6 @@ def main():
         args.hid_dims, args.output_dim, args.max_depth,
         range(1, args.exec_cap + 1))
 
-    # tensorboard logging
-    tf_logger = TFLogger(sess, [
-        'actor_loss', 'entropy', 'value_loss', 'episode_length',
-        'average_reward_per_second', 'sum_reward', 'reset_probability',
-        'num_jobs', 'reset_hit', 'average_job_duration',
-        'entropy_weight'])
-
     # store average reward for computing differential rewards
     avg_reward_calculator = AveragePerStepReward(
         args.average_reward_storage_size)
@@ -267,8 +242,11 @@ def main():
     # initialize episode reset probability
     reset_prob = args.reset_prob
 
+    ep_finish_time = []
+
     # ---- start training process ----
-    for ep in range(1, args.num_ep):
+    for ep in range(1, args.num_ep+1):
+
         print('training epoch', ep)
 
         # synchronize the model parameters for each training agent
@@ -277,133 +255,132 @@ def main():
         # generate max time stochastically based on reset prob
         max_time = generate_coin_flips(reset_prob)
 
-        # send out parameters to training agents
-        for i in range(args.num_agents):
-            params_queues[i].put([
-                actor_params, args.seed + ep,
-                max_time, entropy_weight])
+        all_rewards, all_diff_times, all_times, all_cum_reward = [], [], [], []
 
-        # storage for advantage computation
-        all_rewards, all_diff_times, all_times, \
-        all_num_finished_jobs, all_avg_job_duration, \
-        all_reset_hit, = [], [], [], [], [], []
+        env = Environment()
 
-        t1 = time.time()
+        env.reset(max_time=max_time)
 
-        # get reward from agents
-        any_agent_panic = False
+        exp = {'node_inputs': [], 'job_inputs': [], \
+               'gcn_mats': [], 'gcn_masks': [], \
+               'summ_mats': [], 'running_dag_mat': [], \
+               'dag_summ_back_mat': [], \
+               'node_act_vec': [], 'job_act_vec': [], \
+               'node_valid_mask': [], 'job_valid_mask': [], \
+               'reward': [], 'wall_time': [],
+               'job_state_change': []}
 
-        for i in range(args.num_agents):
-            result = reward_queues[i].get()
+        obs = env.observe()
+        done = False
 
-            if result is None:
-                any_agent_panic = True
-                continue
+        exp['wall_time'].append(env.wall_time.curr_time)
+
+        idxs = 0
+        while not done:
+            node, use_exec = invoke_model(actor_agent, obs, exp)
+
+            if node is None or use_exec is None :
+                print(str(idxs) + " 本次不执行调度。")
             else:
-                batch_reward, batch_time, \
-                    num_finished_jobs, avg_job_duration, \
-                    reset_hit = result
+                idxs = idxs + 1
+                print(
+                    f"{idxs} - 本次调度 {node.idx} 号node, num_taks: {node.num_tasks}, next_task_id: {node.next_task_idx} ，分配执行器 {use_exec}个。time-{env.wall_time.curr_time} \n\t\t max-time-{max_time} reset_prob-{reset_prob} remain dags-{len(env.job_dags)}")
+            # -------------------
+            obs, reward, done = env.step(node, use_exec)
+            # -------------------
+            
+            if node is not None:
+                # valid action, store reward and time
+                exp['reward'].append(reward)
+                exp['wall_time'].append(env.wall_time.curr_time)
+            elif len(exp['reward']) > 0:
+                # Note: if we skip the reward when node is None
+                # (i.e., no available actions), the sneaky
+                # agent will learn to exhaustively pick all
+                # nodes in one scheduling round, in order to
+                # avoid the negative reward
+                exp['reward'][-1] += reward
+                exp['wall_time'][-1] = env.wall_time.curr_time
+            
+            if sum(exp['job_state_change']) > 1 or done:
+                agent_exp_valid = True
+                batch_reward, batch_time = exp["reward"], exp["wall_time"]
+                if len(batch_reward) > 0 and len(batch_time) > 0:
+                    diff_time = np.asarray(batch_time[1:]) - np.asarray(batch_time[:-1])
 
-            diff_time = np.array(batch_time[1:]) - \
-                        np.array(batch_time[:-1])
+                    all_rewards.append(batch_reward)
+                    all_diff_times.append(diff_time)
+                    all_times.append(batch_time[1:])
 
-            all_rewards.append(batch_reward)
-            all_diff_times.append(diff_time)
-            all_times.append(batch_time[1:])
-            all_num_finished_jobs.append(num_finished_jobs)
-            all_avg_job_duration.append(avg_job_duration)
-            all_reset_hit.append(reset_hit)
+                    avg_reward_calculator.add_list_filter_zero(batch_reward, diff_time)
+                else:
+                    agent_exp_valid = False
+                
+                if agent_exp_valid:
+                    avg_per_step_reward = avg_reward_calculator.get_avg_per_step_reward()
+                    for i in range(args.num_agents):
+                        if args.diff_reward_enabled:
+                            rewards = np.array([r - avg_per_step_reward * t for (r, t) in zip(all_rewards[i], all_diff_times[i])])
+                        else:
+                            rewards = np.array([r for (r, t) in zip(all_rewards[i], all_diff_times[i])])
+                        cum_reward = discount(rewards, args.gamma)
 
-            avg_reward_calculator.add_list_filter_zero(
-                batch_reward, diff_time)
+                        all_cum_reward.append(cum_reward)
 
-        t2 = time.time()
-        print('got reward from workers', t2 - t1, 'seconds')
+                    baselines = get_piecewise_linear_fit_baseline(all_cum_reward, all_times)
+                    for i in range(args.num_agents):
+                        batch_adv = all_cum_reward[i] - baselines[i]
+                        batch_adv = np.reshape(batch_adv, [len(batch_adv), 1])
 
-        if any_agent_panic:
-            # The try condition breaks in some agent (should
-            # happen rarely), throw out this rollout and try
-            # again for next iteration (TODO: log this event)
-            for i in range(args.num_agents):
-                adv_queues[i].put(None)
-            continue
+                        # compute gradients
+                        if batch_adv is not None:
+                            actor_gradient = compute_actor_gradients(
+                                actor_agent, exp, batch_adv, entropy_weight)
+                            if actor_gradient is not None:
+                                print("apply gradient...")
+                                actor_agent.apply_gradients(actor_gradient, args.lr)
+                                actor_gradient.clear()
+                                del actor_gradient
+                                exp = {
+                                    'node_inputs': [],
+                                    'gcn_mats': [],
+                                    'gcn_masks': [],
+                                    'summ_mats': [],
+                                    'running_dag_mat': [],
+                                    'dag_summ_back_mat': [],
+                                    'node_act_vec': [],
+                                    'node_valid_mask': [],
+                                    'reward': [],
+                                    'wall_time': [],
+                                    'job_state_change': []
+                                }
+                                # initial time
+                                exp['wall_time'].append(env.wall_time.curr_time)
+                                all_rewards, all_diff_times, all_times, all_cum_reward = [], [], [], []
 
-        # compute differential reward
-        all_cum_reward = []
-        avg_per_step_reward = avg_reward_calculator.get_avg_per_step_reward()
-        for i in range(args.num_agents):
-            if args.diff_reward_enabled:
-                # differential reward mode on
-                rewards = np.array([r - avg_per_step_reward * t for \
-                    (r, t) in zip(all_rewards[i], all_diff_times[i])])
-            else:
-                # regular reward
-                rewards = np.array([r for \
-                    (r, t) in zip(all_rewards[i], all_diff_times[i])])
+            if done:
+                # print(done)
+                print(f"任务排布的虚拟时间: {env.wall_time.curr_time}")
+                print(
+                    f"done-{done} max_time-{env.max_time} job_dags_num-{len(env.job_dags)}")
+                if ep % args.model_save_interval == 0:
+                        actor_agent.save_model(args.model_folder + 'model_ep_' + str(ep))
 
-            cum_reward = discount(rewards, args.gamma)
-
-            all_cum_reward.append(cum_reward)
-
-        # compute baseline
-        baselines = get_piecewise_linear_fit_baseline(all_cum_reward, all_times)
-
-        # give worker back the advantage
-        for i in range(args.num_agents):
-            batch_adv = all_cum_reward[i] - baselines[i]
-            batch_adv = np.reshape(batch_adv, [len(batch_adv), 1])
-            adv_queues[i].put(batch_adv)
-
-        t3 = time.time()
-        print('advantage ready', t3 - t2, 'seconds')
-
-        actor_gradients = []
-        all_action_loss = []  # for tensorboard
-        all_entropy = []  # for tensorboard
-        all_value_loss = []  # for tensorboard
-
-        for i in range(args.num_agents):
-            (actor_gradient, loss) = gradient_queues[i].get()
-
-            actor_gradients.append(actor_gradient)
-            all_action_loss.append(loss[0])
-            all_entropy.append(-loss[1] / \
-                float(all_cum_reward[i].shape[0]))
-            all_value_loss.append(loss[2])
-
-        t4 = time.time()
-        print('worker send back gradients', t4 - t3, 'seconds')
-
-        actor_agent.apply_gradients(
-            aggregate_gradients(actor_gradients), args.lr)
-
-        t5 = time.time()
-        print('apply gradient', t5 - t4, 'seconds')
-
-        tf_logger.log(ep, [
-            np.mean(all_action_loss),
-            np.mean(all_entropy),
-            np.mean(all_value_loss),
-            np.mean([len(b) for b in baselines]),
-            avg_per_step_reward * args.reward_scale,
-            np.mean([cr[0] for cr in all_cum_reward]),
-            reset_prob,
-            np.mean(all_num_finished_jobs),
-            np.mean(all_reset_hit),
-            np.mean(all_avg_job_duration),
-            entropy_weight])
-
-        # decrease entropy weight
+        print(f"epoch {ep} end...")
         entropy_weight = decrease_var(entropy_weight,
-            args.entropy_weight_min, args.entropy_weight_decay)
+                args.entropy_weight_min, args.entropy_weight_decay)
 
         # decrease reset probability
         reset_prob = decrease_var(reset_prob,
-            args.reset_prob_min, args.reset_prob_decay)
+                args.reset_prob_min, args.reset_prob_decay)
 
-        if ep % args.model_save_interval == 0:
-            actor_agent.save_model(args.model_folder + \
-                'model_ep_' + str(ep))
+        ep_finish_time.append(env.wall_time.curr_time)
+        import matplotlib.pyplot as plt
+        plt.figure()
+        plt.plot(ep_finish_time, label="finish time", marker="o")
+        plt.xlabel("epoch")
+        plt.savefig(os.path.join(args.model_folder, "finish_time.png"))
+        plt.close()
 
     sess.close()
 
