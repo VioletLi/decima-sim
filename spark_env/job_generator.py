@@ -106,6 +106,53 @@ def recursive_find_descendant(node):
 def generate_alibaba_jobs(np_random, timeline, wall_time):
     pass
 
+def generate_tianchi_jobs(np_random, timeline, wall_time):
+    job_dags = OrderedSet()
+    t = 0
+    # job总数 数据集d为478
+    for i in range(args.job_num):
+        cur_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        data_path = os.path.join(cur_path, "data")
+
+        adj_mat: np.ndarray = np.load(
+            '{}/adj_mat_{}.npy'.format(data_path, i + 1), allow_pickle=True)
+        nodes_info: np.ndarray = np.load(
+            '{}/job_info_{}.npy'.format(data_path, i + 1), allow_pickle=True).item()
+
+        assert adj_mat.shape[0] == adj_mat.shape[1]
+        assert adj_mat.shape[0] == len(nodes_info)
+        
+        num_nodes = adj_mat.shape[0]
+        nodes = []
+        for n in range(num_nodes):
+            node_info = nodes_info[n]
+            duration = node_info["duration"]
+            # generate tasks in a node
+            tasks = []
+            for j in range(node_info["instNumber"]):
+                task = Task(j, duration, wall_time)
+                tasks.append(task)
+            # generate a node
+            node = Node(
+                n, tasks, duration, wall_time, np_random)
+            nodes.append(node)
+        # parent and child node info
+        for k in range(num_nodes):
+            for j in range(num_nodes):
+                if adj_mat[k, j] == 1:
+                    nodes[k].child_nodes.append(nodes[j])
+                    nodes[j].parent_nodes.append(nodes[k])
+
+        # initialize descendant nodes
+        for node in nodes:
+            if len(node.parent_nodes) == 0:  # root
+                node.descendant_nodes = recursive_find_descendant(node)
+        # generate DAG
+        #job_dag = JobDAG(nodes, adj_mat, "job_" + str(i + 1), args.exec_level_range)
+        job_dag = JobDAG(nodes, adj_mat, "job_" + str(i + 1))
+        job_dag.start_time = t
+        job_dag.arrived = True
+        job_dags.add(job_dag)
 
 def generate_tpch_jobs(np_random, timeline, wall_time):
 
@@ -141,7 +188,10 @@ def generate_tpch_jobs(np_random, timeline, wall_time):
 
 
 def generate_jobs(np_random, timeline, wall_time):
-    if args.query_type == 'tpch':
+    if args.query_type == 'tianchi':
+        job_dags = generate_tianchi_jobs(np_random, timeline, wall_time)
+    
+    elif args.query_type == 'tpch':
         job_dags = generate_tpch_jobs(np_random, timeline, wall_time)
 
     elif args.query_type == 'alibaba':

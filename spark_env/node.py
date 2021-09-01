@@ -95,49 +95,7 @@ class Node(object):
         num_executors = len(self.job_dag.executors)
         assert num_executors > 0
 
-        # sample an executor point in the data
-        executor_key = self.sample_executor_key(num_executors)
-
-        if executor.task is None or \
-            executor.task.node.job_dag != task.node.job_dag:
-            # the executor never runs a task in this job
-            # fresh executor incurrs a warmup delay
-            if len(self.task_duration['fresh_durations'][executor_key]) > 0:
-                # (1) try to directly retrieve the warmup delay from data
-                fresh_durations = \
-                    self.task_duration['fresh_durations'][executor_key]
-                i = np.random.randint(len(fresh_durations))
-                duration = fresh_durations[i]
-            else:
-                # (2) use first wave but deliberately add in a warmup delay
-                first_wave = \
-                    self.task_duration['first_wave'][executor_key]
-                i = np.random.randint(len(first_wave))
-                duration = first_wave[i] + args.warmup_delay
-
-        elif executor.task is not None and \
-                executor.task.node == task.node and \
-                len(self.task_duration['rest_wave'][executor_key]) > 0:
-            # executor was working on this node
-            # the task duration should be retrieved from rest wave
-            rest_wave = self.task_duration['rest_wave'][executor_key]
-            i = np.random.randint(len(rest_wave))
-            duration = rest_wave[i]
-        else:
-            # executor is fresh to this node, use first wave
-            if len(self.task_duration['first_wave'][executor_key]) > 0:
-                # (1) try to retrieve first wave from data
-                first_wave = \
-                    self.task_duration['first_wave'][executor_key]
-                i = np.random.randint(len(first_wave))
-                duration = first_wave[i]
-            else:
-                # (2) first wave doesn't exist, use fresh durations instead
-                # (should happen very rarely)
-                fresh_durations = \
-                    self.task_duration['fresh_durations'][executor_key]
-                i = np.random.randint(len(fresh_durations))
-                duration = fresh_durations[i]
+        duration = self.task_duration
 
         # detach the executor from old node
         # the executor can run task means it is local
