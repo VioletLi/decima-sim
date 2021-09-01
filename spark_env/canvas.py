@@ -60,18 +60,23 @@ def visualize_dag_time(job_dags, executors, plot_total_time=None, plot_type='sta
     # so that we can visualize it later
     dags_finish_time = []
     dags_duration = []
+    executor_ids = []
+
     for dag in job_dags:
-        dag_finish_time = 0
         for node in dag.nodes:
             for task in node.tasks:
+                executor_ids.append(task.executor.idx)
                 all_tasks.append(task)
-                if task.finish_time > dag_finish_time:
-                    dag_finish_time = task.finish_time
-        dags_finish_time.append(dag_finish_time)
-        assert dag_finish_time == dag.completion_time
-        dags_duration.append(dag_finish_time - dag.start_time)
+        dags_finish_time.append(dag.completion_time)
+        dags_duration.append(dag.completion_time - dag.start_time)
 
     # 2. visualize them in a canvas
+
+    exec_idx_set = set(executor_ids)
+    num_executor_used = len(exec_idx_set)
+    exec_id_to_idx = {}
+    for i, idx in enumerate(exec_idx_set):
+        exec_id_to_idx[idx] = i
     if plot_total_time is None:
         canvas = np.ones([len(executors), int(max(dags_finish_time))]) * args.canvas_base
     else:
@@ -84,22 +89,22 @@ def visualize_dag_time(job_dags, executors, plot_total_time=None, plot_type='sta
         bases[job_dag] = base
         base += job_dag.num_nodes
 
-    for task in all_tasks:
-
-        start_time = int(task.start_time)
-        finish_time = int(task.finish_time)
-        exec_id = task.executor.idx
+    for task, exec_id in zip(all_tasks, executor_ids):
+        task = cast(Task, task)
+        start_time = round(task.start_time)
+        finish_time = round(task.finish_time)
+        # exec_id = task.executor.idx
 
         if plot_type == 'stage':
 
-            canvas[exec_id, start_time : finish_time] = \
+            canvas[exec_id_to_idx[exec_id], start_time : finish_time+1] = \
                 bases[task.node.job_dag] + task.node.idx
 
         elif plot_type == 'app':
-            canvas[exec_id, start_time : finish_time] = \
+            canvas[exec_id_to_idx[exec_id], start_time : finish_time+1] = \
                 job_dags.index(task.node.job_dag)
 
-    return canvas, dags_finish_time, dags_duration
+    return canvas, dags_finish_time, dags_duration, num_executor_used
 
 
 def visualize_dag_time_save_pdf(
@@ -112,12 +117,12 @@ def visualize_dag_time_save_pdf(
 
     # canvas
     plt.imshow(canvas, interpolation='nearest', aspect='auto')
-    # plt.colorbar()
+    plt.colorbar()
     # each dag finish time
-    for finish_time in dag_finish_time:
-        plt.plot([finish_time, finish_time],
-                 [- 0.5, len(executors) - 0.5], 'r')
+    # for finish_time in dag_finish_time:
+    #     plt.plot([finish_time, finish_time],
+    #              [- 0.5, len(executors) - 0.5], 'r')
     plt.title('average DAG completion time: ' + str(np.mean(dags_duration)))
-    fig.savefig(file_path)
+    fig.savefig(file_path, bbox_inches='tight')
     plt.close(fig)
 
