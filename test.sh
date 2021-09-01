@@ -1,11 +1,11 @@
-python3 -u train.py \
+python3 test.py \
+--test_schemes learn \
 --exec_cap 4332 \
 --model_folder ./baseline_models/ \
 --result_folder ./baseline_results/ \
 --model_save_interval 10 \
---reset_prob 0.5 \
+--reset_prob 0.999 \
 --reset_prob_decay 0.002 \
 --reset_prob_min 0.0001 \
 --job_num 478 \
---num_ep 50 \
-| tee baseline_train.log
+--saved_model ./baseline_models/model_ep_50
