@@ -52,7 +52,9 @@ parser.add_argument('--new_dag_interval', type=int, default=10000,
                     help='new DAG arrival interval (default: 10000 milliseconds)')
 parser.add_argument('--new_dag_interval_noise', type=int, default=1000,
                     help='new DAG arrival interval noise (default: 1000 milliseconds)')
-
+parser.add_argument('--job_num', type=int, default=478,
+                    help='the amount of job_dag used in training (default: 478)')
+                    
 # -- Multi resource environment --
 parser.add_argument('--exec_group_num', type=int,
                     default=[50, 50], nargs='+',
