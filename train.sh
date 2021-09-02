@@ -1,4 +1,5 @@
 python3 -u train.py \
+--query_type tianchi \
 --exec_cap 4332 \
 --model_folder ./baseline_models/ \
 --result_folder ./baseline_results/ \

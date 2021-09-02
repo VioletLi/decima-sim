@@ -154,6 +154,8 @@ def generate_tianchi_jobs(np_random, timeline, wall_time):
         job_dag.start_time = t
         job_dag.arrived = True
         job_dags.add(job_dag)
+    
+    return job_dags
 
 def generate_tpch_jobs(np_random, timeline, wall_time):
 
