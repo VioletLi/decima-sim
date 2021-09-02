@@ -127,7 +127,7 @@ parser.add_argument('--reset_prob_decay', type=float, default=0,
                     help='Decay rate of reset probability (default: 0)')
 parser.add_argument('--reset_prob_min', type=float, default=0,
                     help='Minimum of decay probability (default: 0)')
-parser.add_argument('--num_agents', type=int, default=16,
+parser.add_argument('--num_agents', type=int, default=1,
                     help='Number of parallel agents (default: 16)')
 parser.add_argument('--num_ep', type=int, default=10000000,
                     help='Number of training epochs (default: 10000000)')
