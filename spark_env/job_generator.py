@@ -127,6 +127,7 @@ def generate_tianchi_jobs(np_random, timeline, wall_time):
         for n in range(num_nodes):
             node_info = nodes_info[n]
             duration = node_info["duration"]
+            duration = float(duration) / node_info["instNumber"]
             # generate tasks in a node
             tasks = []
             for j in range(node_info["instNumber"]):
