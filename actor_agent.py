@@ -207,10 +207,15 @@ class ActorAgent(Agent):
                 gsn_dag_summ_extend,
                 gsn_global_summ_extend_node], axis=2)
 
+            # node_hid_0 = tl.fully_connected(merge_node, 32, activation_fn=act_fn)
+            # node_hid_1 = tl.fully_connected(node_hid_0, 16, activation_fn=act_fn)
+            # node_hid_2 = tl.fully_connected(node_hid_1, 8, activation_fn=act_fn)
+            # node_outputs = tl.fully_connected(node_hid_2, 1, activation_fn=None)
+
             node_hid_0 = tl.fully_connected(merge_node, 32, activation_fn=act_fn)
-            node_hid_1 = tl.fully_connected(node_hid_0, 16, activation_fn=act_fn)
-            node_hid_2 = tl.fully_connected(node_hid_1, 8, activation_fn=act_fn)
-            node_outputs = tl.fully_connected(node_hid_2, 1, activation_fn=None)
+            node_hid_1 = tl.fully_connected(node_hid_0, 8, activation_fn=act_fn)
+            # node_hid_2 = tl.fully_connected(node_hid_1, 8, activation_fn=act_fn)
+            node_outputs = tl.fully_connected(node_hid_1, 1, activation_fn=None)
 
             # reshape the output dimension (batch_size, total_num_nodes)
             node_outputs = tf.reshape(node_outputs, [batch_size, -1])
@@ -233,10 +238,14 @@ class ActorAgent(Agent):
             expanded_state = expand_act_on_state(
                 merge_job, [l / 50.0 for l in self.executor_levels])
 
+            # job_hid_0 = tl.fully_connected(expanded_state, 32, activation_fn=act_fn)
+            # job_hid_1 = tl.fully_connected(job_hid_0, 16, activation_fn=act_fn)
+            # job_hid_2 = tl.fully_connected(job_hid_1, 8, activation_fn=act_fn)
+            # job_outputs = tl.fully_connected(job_hid_2, 1, activation_fn=None)
+            
             job_hid_0 = tl.fully_connected(expanded_state, 32, activation_fn=act_fn)
-            job_hid_1 = tl.fully_connected(job_hid_0, 16, activation_fn=act_fn)
-            job_hid_2 = tl.fully_connected(job_hid_1, 8, activation_fn=act_fn)
-            job_outputs = tl.fully_connected(job_hid_2, 1, activation_fn=None)
+            job_hid_1 = tl.fully_connected(job_hid_0, 8, activation_fn=act_fn)
+            job_outputs = tl.fully_connected(job_hid_1, 1, activation_fn=None)
 
             # reshape the output dimension (batch_size, num_jobs * num_exec_limits)
             job_outputs = tf.reshape(job_outputs, [batch_size, -1])
