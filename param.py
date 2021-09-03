@@ -42,9 +42,9 @@ parser.add_argument('--alibaba', type=bool, default=False,
                     help='Use Alibaba dags (defaule: False)')
 parser.add_argument('--var_num_dags', type=bool, default=False,
                     help='Vary number of dags in batch (default: False)')
-parser.add_argument('--moving_delay', type=int, default=2000,
+parser.add_argument('--moving_delay', type=int, default=0,
                     help='Moving delay (milliseconds) (default: 2000)')
-parser.add_argument('--warmup_delay', type=int, default=1000,
+parser.add_argument('--warmup_delay', type=int, default=0,
                     help='Executor warming up delay (milliseconds) (default: 1000)')
 parser.add_argument('--diff_reward_enabled', type=int, default=0,
                     help='Enable differential reward (default: 0)')
