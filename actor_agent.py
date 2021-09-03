@@ -212,8 +212,8 @@ class ActorAgent(Agent):
             # node_hid_2 = tl.fully_connected(node_hid_1, 8, activation_fn=act_fn)
             # node_outputs = tl.fully_connected(node_hid_2, 1, activation_fn=None)
 
-            node_hid_0 = tl.fully_connected(merge_node, 32, activation_fn=act_fn)
-            node_hid_1 = tl.fully_connected(node_hid_0, 8, activation_fn=act_fn)
+            node_hid_0 = tl.fully_connected(merge_node, 4, activation_fn=act_fn)
+            node_hid_1 = tl.fully_connected(node_hid_0, 2, activation_fn=act_fn)
             # node_hid_2 = tl.fully_connected(node_hid_1, 8, activation_fn=act_fn)
             node_outputs = tl.fully_connected(node_hid_1, 1, activation_fn=None)
 
@@ -243,8 +243,8 @@ class ActorAgent(Agent):
             # job_hid_2 = tl.fully_connected(job_hid_1, 8, activation_fn=act_fn)
             # job_outputs = tl.fully_connected(job_hid_2, 1, activation_fn=None)
             
-            job_hid_0 = tl.fully_connected(expanded_state, 32, activation_fn=act_fn)
-            job_hid_1 = tl.fully_connected(job_hid_0, 8, activation_fn=act_fn)
+            job_hid_0 = tl.fully_connected(expanded_state, 4, activation_fn=act_fn)
+            job_hid_1 = tl.fully_connected(job_hid_0, 2, activation_fn=act_fn)
             job_outputs = tl.fully_connected(job_hid_1, 1, activation_fn=None)
 
             # reshape the output dimension (batch_size, num_jobs * num_exec_limits)

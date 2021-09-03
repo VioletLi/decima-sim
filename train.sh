@@ -9,4 +9,7 @@ python3 -u train.py \
 --reset_prob_min 0.0001 \
 --job_num 478 \
 --num_ep 50 \
+--max_depth 2 \
+--hid_dims 4 4 \
+--output_dim 4 \
 | tee baseline_train.log

@@ -334,7 +334,7 @@ def main():
 
                         # compute gradients
                         if batch_adv is not None:
-                            actor_gradient = compute_actor_gradients(
+                            actor_gradient, loss = compute_actor_gradients(
                                 actor_agent, exp, batch_adv, entropy_weight)
                             if actor_gradient is not None:
                                 print("apply gradient...")
