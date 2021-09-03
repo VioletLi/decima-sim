@@ -336,9 +336,9 @@ class Environment(object):
             self.job_dags, self.wall_time.curr_time)
 
         # no more decision to make, jobs all done or time is up
-        done = (self.num_source_exec == 0) and \
-               ((len(self.timeline) == 0) or \
-               (self.wall_time.curr_time >= self.max_time))
+        done = self.wall_time.curr_time >= self.max_time or \
+            ((self.num_source_exec == 0) and \
+            (len(self.timeline) == 0))
 
         if done:
             assert self.wall_time.curr_time >= self.max_time or \
