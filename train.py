@@ -341,19 +341,14 @@ def main():
                                 actor_agent.apply_gradients(actor_gradient, args.lr)
                                 actor_gradient.clear()
                                 del actor_gradient
-                                exp = {
-                                    'node_inputs': [],
-                                    'gcn_mats': [],
-                                    'gcn_masks': [],
-                                    'summ_mats': [],
-                                    'running_dag_mat': [],
-                                    'dag_summ_back_mat': [],
-                                    'node_act_vec': [],
-                                    'node_valid_mask': [],
-                                    'reward': [],
-                                    'wall_time': [],
-                                    'job_state_change': []
-                                }
+                                exp = {'node_inputs': [], 'job_inputs': [], \
+                                    'gcn_mats': [], 'gcn_masks': [], \
+                                    'summ_mats': [], 'running_dag_mat': [], \
+                                    'dag_summ_back_mat': [], \
+                                    'node_act_vec': [], 'job_act_vec': [], \
+                                    'node_valid_mask': [], 'job_valid_mask': [], \
+                                    'reward': [], 'wall_time': [],
+                                    'job_state_change': []}
                                 # initial time
                                 exp['wall_time'].append(env.wall_time.curr_time)
                                 all_rewards, all_diff_times, all_times, all_cum_reward = [], [], [], []
