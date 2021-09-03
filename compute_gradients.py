@@ -63,6 +63,9 @@ def compute_actor_gradients(actor_agent, exp, batch_adv, entropy_weight):
     all_loss[2] = np.sum(batch_adv ** 2) # time based baseline loss
 
     # aggregate all gradients from the batches
-    gradients = aggregate_gradients(all_gradients)
+    if len(all_gradients > 0):
+        gradients = aggregate_gradients(all_gradients)
+    else:
+        gradients = None
 
     return gradients, all_loss
