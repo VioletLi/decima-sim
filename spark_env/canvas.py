@@ -112,7 +112,7 @@ def visualize_dag_time(job_dags, executors, plot_total_time=None, plot_type='sta
 def visualize_dag_time_save_pdf(
         job_dags, executors, file_path, plot_total_time=None, plot_type='stage'):
     
-    canvas, dag_finish_time, dags_duration = \
+    canvas, dag_finish_time, dags_duration, num_executor_used = \
         visualize_dag_time(job_dags, executors, plot_total_time, plot_type)
 
     fig = plt.figure()
