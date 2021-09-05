@@ -12,4 +12,5 @@ python3 test.py \
 --max_depth 2 \
 --hid_dims 4 4 \
 --output_dim 4 \
---query_type tianchi
+--query_type tianchi \
+| tee baseline_test.log
