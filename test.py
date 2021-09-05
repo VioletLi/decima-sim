@@ -66,7 +66,7 @@ for exp in range(args.num_exp):
         while not done:
             node, use_exec = agent.get_action(obs)
             if node is not None:
-                print(f"本次调度: node-{node.idx}, num_task-{node.num_tasks}, next_task_idx-{node.next_task_idx}, exec_type-{exec_type}, use_exec-{use_exec} num_jobs-{len(env.job_dags)}")
+                print(f"本次调度: node-{node.idx}, num_task-{node.num_tasks}, next_task_idx-{node.next_task_idx}, use_exec-{use_exec} num_jobs-{len(env.job_dags)}")
             obs, reward, done = env.step(node, use_exec)
             total_reward += reward
 
