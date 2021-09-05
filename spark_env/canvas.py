@@ -1,3 +1,5 @@
+from typing import cast
+from spark_env.task import Task
 from param import *
 from utils import *
 import numpy as np
