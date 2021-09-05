@@ -8,4 +8,8 @@ python3 test.py \
 --reset_prob_decay 0.002 \
 --reset_prob_min 0.0001 \
 --job_num 478 \
---saved_model ./baseline_models/model_ep_50
+--saved_model ./baseline_models/model_ep_10 \
+--max_depth 2 \
+--hid_dims 4 4 \
+--output_dim 4 \
+--query_type tianchi
